@@ -65,6 +65,7 @@ class FlightStore(
                             data.lastRefresh, data.refreshError, data.actionError, data.pendingIds) to selection
                     }
                 }.collect { (screen, requestedSelection) ->
+                    if (screen.filters != filters.value) return@collect
                     if (requestedSelection != null && screen.selectedFlight == null) {
                         selectedId.compareAndSet(requestedSelection, null)
                     }
@@ -77,8 +78,13 @@ class FlightStore(
     fun observe(onChange: (FlightScreenState) -> Unit): FlightSubscription =
         FlightSubscription(scope.launch { state.collect { onChange(it) } })
 
-    fun setOrigin(value: String) { filters.update { it.copy(origin = value) } }
-    fun setDestination(value: String) { filters.update { it.copy(destination = value) } }
+    private fun updateFilters(value: FlightFilters) {
+        filters.value = value
+        // Native text fields need their edited value immediately, before background filtering finishes.
+        mutableState.update { it.copy(filters = value) }
+    }
+    fun setOrigin(value: String) = updateFilters(filters.value.copy(origin = value))
+    fun setDestination(value: String) = updateFilters(filters.value.copy(destination = value))
 
     fun applyFilters(startDate: String, endDate: String, cabin: String, maximumPoints: String, programs: List<String>): String? {
         val points = maximumPoints.trim().takeIf { it.isNotEmpty() }
@@ -87,11 +93,11 @@ class FlightStore(
         val next = filters.value.copy(startDate = startDate, endDate = endDate, cabin = cabin,
             maximumPoints = number, programs = programs.toSet())
         next.validationError()?.let { return it }
-        filters.value = next
+        updateFilters(next)
         return null
     }
 
-    fun resetFilters() { filters.value = FlightFilters() }
+    fun resetFilters() = updateFilters(FlightFilters())
     fun selectFlight(id: String?) { selectedId.value = id }
     fun refresh() { scope.launch { if (!loaded) loaded = repository.load(); if (loaded) repository.refresh() } }
     fun saveFlight(flight: Flight) { scope.launch { repository.save(flight) } }

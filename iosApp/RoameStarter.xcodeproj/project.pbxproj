@@ -4,6 +4,21 @@
  classes = {};
  objectVersion = 56;
  objects = {
+  A10000000000000000000024 = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+  A10000000000000000000025 = {isa = PBXBuildFile; fileRef = A10000000000000000000024; };
+
+  B10000000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITests/FlightExplorerUITests.swift; sourceTree = "<group>"; };
+  B10000000000000000000002 = {isa = PBXBuildFile; fileRef = B10000000000000000000001; };
+  B10000000000000000000003 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FlightExplorerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+  B10000000000000000000004 = {isa = PBXNativeTarget; buildConfigurationList = B10000000000000000000005; buildPhases = (B10000000000000000000006, B10000000000000000000007); buildRules = (); dependencies = (B10000000000000000000008); name = FlightExplorerUITests; productName = FlightExplorerUITests; productReference = B10000000000000000000003; productType = "com.apple.product-type.bundle.ui-testing"; };
+  B10000000000000000000005 = {isa = XCConfigurationList; buildConfigurations = (B1000000000000000000000A, B1000000000000000000000B); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+  B10000000000000000000006 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000002); runOnlyForDeploymentPostprocessing = 0; };
+  B10000000000000000000007 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+  B10000000000000000000008 = {isa = PBXTargetDependency; target = A10000000000000000000007; targetProxy = B10000000000000000000009; };
+  B10000000000000000000009 = {isa = PBXContainerItemProxy; containerPortal = A1000000000000000000000D; proxyType = 1; remoteGlobalIDString = A10000000000000000000007; remoteInfo = RoameStarter; };
+  B1000000000000000000000A = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = travel.roame.takehome.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_TARGET_NAME = RoameStarter; TARGETED_DEVICE_FAMILY = "1,2"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
+  B1000000000000000000000B = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = travel.roame.takehome.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_TARGET_NAME = RoameStarter; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
+
   A10000000000000000000001 = {isa = PBXBuildFile; fileRef = A10000000000000000000002; };
   A10000000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoameStarterApp.swift; sourceTree = "<group>"; };
   A10000000000000000000003 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoameStarter.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -12,8 +27,8 @@
   A10000000000000000000021 = {isa = PBXBuildFile; fileRef = A10000000000000000000020; };
   A10000000000000000000022 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightMapView.swift; sourceTree = "<group>"; };
   A10000000000000000000023 = {isa = PBXBuildFile; fileRef = A10000000000000000000022; };
-  A10000000000000000000005 = {isa = PBXGroup; children = (A10000000000000000000002, A10000000000000000000020, A10000000000000000000022, A10000000000000000000004, A10000000000000000000006); sourceTree = "<group>"; };
-  A10000000000000000000006 = {isa = PBXGroup; children = (A10000000000000000000003); name = Products; sourceTree = "<group>"; };
+  A10000000000000000000005 = {isa = PBXGroup; children = (A10000000000000000000024, B10000000000000000000001, A10000000000000000000002, A10000000000000000000020, A10000000000000000000022, A10000000000000000000004, A10000000000000000000006); sourceTree = "<group>"; };
+  A10000000000000000000006 = {isa = PBXGroup; children = (A10000000000000000000003, B10000000000000000000003); name = Products; sourceTree = "<group>"; };
   A10000000000000000000007 = {isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000008; buildPhases = (A10000000000000000000009, A1000000000000000000000A, A1000000000000000000000B, A1000000000000000000000C); buildRules = (); dependencies = (); name = RoameStarter; productName = RoameStarter; productReference = A10000000000000000000003; productType = "com.apple.product-type.application"; };
   A10000000000000000000009 = {
    isa = PBXShellScriptBuildPhase;
@@ -29,7 +44,7 @@
   };
   A1000000000000000000000A = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000021, A10000000000000000000023); runOnlyForDeploymentPostprocessing = 0; };
   A1000000000000000000000B = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-  A1000000000000000000000C = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+  A1000000000000000000000C = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000025); runOnlyForDeploymentPostprocessing = 0; };
   A1000000000000000000000D = {
    isa = PBXProject;
    attributes = {BuildIndependentTargetsInParallel = YES; LastUpgradeCheck = 1600; TargetAttributes = {A10000000000000000000007 = {CreatedOnToolsVersion = 16.0; }; }; };
@@ -42,11 +57,12 @@
    productRefGroup = A10000000000000000000006;
    projectDirPath = "";
    projectRoot = "";
-   targets = (A10000000000000000000007);
+   targets = (A10000000000000000000007, B10000000000000000000004);
   };
   A10000000000000000000010 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 6.0; }; name = Debug; };
   A10000000000000000000011 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 6.0; }; name = Release; };
   A10000000000000000000012 = {isa = XCBuildConfiguration; buildSettings = {
+   ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
    CODE_SIGN_STYLE = Automatic;
    CURRENT_PROJECT_VERSION = 1;
    ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -62,6 +78,7 @@
    TARGETED_DEVICE_FAMILY = "1,2";
   }; name = Debug; };
   A10000000000000000000013 = {isa = XCBuildConfiguration; buildSettings = {
+   ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
    CODE_SIGN_STYLE = Automatic;
    CURRENT_PROJECT_VERSION = 1;
    ENABLE_USER_SCRIPT_SANDBOXING = NO;

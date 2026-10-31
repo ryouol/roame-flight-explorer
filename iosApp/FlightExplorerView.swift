@@ -280,6 +280,7 @@ private struct FilterSheet: View {
             Form {
                 Section("Departure dates · inclusive") {
                     DatePicker("From", selection: $start, displayedComponents: .date)
+                        .accessibilityIdentifier("start-date-filter")
                     DatePicker("Through", selection: $end, displayedComponents: .date)
                 }
                 Section("Cabin and points") {
@@ -287,6 +288,7 @@ private struct FilterSheet: View {
                         Text("Any cabin").tag("")
                         ForEach(["Economy", "Premium Economy", "Business"], id: \.self) { Text($0).tag($0) }
                     }
+                    .accessibilityIdentifier("cabin-filter")
                     TextField("Maximum points · no limit", text: $maximum).keyboardType(.numberPad)
                         .accessibilityLabel("Maximum points")
                 }

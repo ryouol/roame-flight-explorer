@@ -6,16 +6,22 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.CameraPosition
@@ -34,6 +40,7 @@ internal fun Int.pointsLabel() = NumberFormat.getIntegerInstance().format(this)
 @Composable
 fun FlightExplorer(store: FlightStore) {
     val state by store.state.collectAsStateWithLifecycle()
+    val focus = LocalFocusManager.current
     var savedTab by rememberSaveable { mutableStateOf(false) }
     var mapMode by rememberSaveable { mutableStateOf(false) }
     var filtersOpen by remember { mutableStateOf(false) }
@@ -41,6 +48,7 @@ fun FlightExplorer(store: FlightStore) {
     var detailOpen by rememberSaveable { mutableStateOf(false) }
     var savedDetailId by rememberSaveable { mutableStateOf<String?>(null) }
     var focusedFlightId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedCardHeight by remember { mutableIntStateOf(0) }
     val camera = rememberCameraPositionState { position = CameraPosition.fromLatLngZoom(LatLng(30.0, 0.0), 1.2f) }
     val listDetail = if (savedTab) state.saved.find { it.id == savedDetailId }
         else state.selectedFlight.takeIf { detailOpen && !mapMode }
@@ -72,8 +80,8 @@ fun FlightExplorer(store: FlightStore) {
             }
             if (!savedTab) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = state.filters.origin, onValueChange = store::setOrigin, label = { Text("From") }, placeholder = { Text("Code or city") }, singleLine = true, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = state.filters.destination, onValueChange = store::setDestination, label = { Text("To") }, placeholder = { Text("Code or city") }, singleLine = true, modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = state.filters.origin, onValueChange = store::setOrigin, label = { Text("From") }, placeholder = { Text("Code or city") }, singleLine = true, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }), modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = state.filters.destination, onValueChange = store::setDestination, label = { Text("To") }, placeholder = { Text("Code or city") }, singleLine = true, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }), modifier = Modifier.weight(1f))
                 }
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("${state.flights.size} flights", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
@@ -98,9 +106,10 @@ fun FlightExplorer(store: FlightStore) {
                 state.flights.isEmpty() -> EmptyState(if (state.cacheCount == 0) "No flights available" else "No matching flights", if (state.cacheCount == 0) "The API returned an empty flight list. Try refreshing later." else "Try a different route or reset your filters.")
                 mapMode -> Box(Modifier.fillMaxSize()) {
                     FlightMap(state.destinations, state.selectedFlight, camera, onDestination = { destination = it },
-                        focusSelection = focusedFlightId != state.selectedFlight?.id, onFocused = { focusedFlightId = it })
+                        focusSelection = selectedCardHeight > 0 && focusedFlightId != state.selectedFlight?.id, onFocused = { focusedFlightId = it },
+                        bottomPadding = if (state.selectedFlight != null) with(LocalDensity.current) { selectedCardHeight.toDp() } + 40.dp else 0.dp)
                     state.selectedFlight?.let { flight ->
-                        Surface(modifier = Modifier.align(Alignment.BottomCenter).padding(start = 12.dp, end = 12.dp, bottom = 28.dp), shape = MaterialTheme.shapes.large, tonalElevation = 8.dp, shadowElevation = 4.dp) {
+                        Surface(modifier = Modifier.align(Alignment.BottomCenter).padding(start = 12.dp, end = 12.dp, bottom = 28.dp).onSizeChanged { selectedCardHeight = it.height }, shape = MaterialTheme.shapes.large, tonalElevation = 8.dp, shadowElevation = 4.dp) {
                             Column { FlightCard(flight, state, onToggle = { toggleSave(store, state, flight) }); TextButton(onClick = { store.selectFlight(null) }) { Text("Close selection") } }
                         }
                     }
@@ -117,7 +126,10 @@ fun FlightExplorer(store: FlightStore) {
             FlightList(group.flights, state, onSelect = { select(it); destination = null }, onToggle = { toggleSave(store, state, it) })
         }
     }
-    if (listDetail != null) ModalBottomSheet(onDismissRequest = { detailOpen = false; savedDetailId = null }) {
+    if (listDetail != null) ModalBottomSheet(
+        onDismissRequest = { detailOpen = false; savedDetailId = null },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
         val detailCamera = rememberCameraPositionState()
         Box(Modifier.fillMaxWidth().height(220.dp)) { FlightMap(emptyList(), listDetail, detailCamera, onDestination = {}) }
         FlightCard(listDetail, state, onToggle = { toggleSave(store, state, listDetail) })
@@ -178,6 +190,7 @@ internal fun EmptyState(title: String, message: String) {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun FilterSheet(filters: FlightFilters, onDismiss: () -> Unit, onApply: (String, String, String, String, List<String>) -> String?) {
+    val focus = LocalFocusManager.current
     var start by remember { mutableStateOf(filters.startDate) }
     var end by remember { mutableStateOf(filters.endDate) }
     var cabin by remember { mutableStateOf(filters.cabin) }
@@ -187,7 +200,7 @@ private fun FilterSheet(filters: FlightFilters, onDismiss: () -> Unit, onApply: 
     var editingStart by remember { mutableStateOf<Boolean?>(null) }
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") } }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().testTag("filters-sheet").verticalScroll(rememberScrollState()).imePadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Refine your flight", style = MaterialTheme.typography.headlineSmall)
             Text("Departure dates include both endpoints.", style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -200,7 +213,7 @@ private fun FilterSheet(filters: FlightFilters, onDismiss: () -> Unit, onApply: 
                     FilterChip(selected = cabin == option, onClick = { cabin = option }, label = { Text(option.ifBlank { "Any cabin" }) })
                 }
             }
-            OutlinedTextField(maximum, { maximum = it }, label = { Text("Maximum points") }, placeholder = { Text("No limit") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(maximum, { maximum = it }, label = { Text("Maximum points") }, placeholder = { Text("No limit") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }), singleLine = true, modifier = Modifier.fillMaxWidth())
             Text("Loyalty programs · any selected", style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("Aeroplan", "Avios", "Flying Blue", "Mileage Plan", "MileagePlus").forEach { option ->

@@ -42,7 +42,10 @@ def phase(name, recording, output):
         print(f"{name}: passed", flush=True)
     finally:
         if recorder:
-            pids = adb("shell", "pidof", "screenrecord").strip().split() if recorder.poll() is None else []
+            try:
+                pids = adb("shell", "pidof", "screenrecord").strip().split() if recorder.poll() is None else []
+            except subprocess.CalledProcessError:
+                pids = []  # The recorder may have reached its time limit.
             for pid in pids:
                 adb("shell", "kill", "-2", pid)
             recorder.wait(timeout=15)
@@ -55,6 +58,7 @@ def main():
     args = parser.parse_args()
     # Refuse to stop an unrelated server; this script owns only the one it starts.
     with socket.socket() as port:
+        port.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         port.bind(("127.0.0.1", 8080))
     output = ROOT / "work/acceptance"
     output.mkdir(parents=True, exist_ok=True)
@@ -67,6 +71,7 @@ def main():
                 try:
                     with urllib.request.urlopen("http://127.0.0.1:8080/flights", timeout=1) as response:
                         if response.status == 200:
+                            response.read()
                             break
                 except OSError:
                     time.sleep(0.1)
