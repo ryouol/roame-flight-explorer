@@ -1,6 +1,6 @@
-import SwiftUI
 import MapKit
 import Shared
+import SwiftUI
 
 struct FlightExplorerView: View {
     @ObservedObject var model: FlightModel
@@ -10,9 +10,10 @@ struct FlightExplorerView: View {
     @State private var destination: String?
     @State private var detailOpen = false
     @State private var savedDetailID: String?
-    @State private var mapPosition: MapCameraPosition = .region(MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 30, longitude: 0),
-        span: MKCoordinateSpan(latitudeDelta: 120, longitudeDelta: 300)))
+    @State private var mapPosition: MapCameraPosition = .region(
+        MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 30, longitude: 0),
+            span: MKCoordinateSpan(latitudeDelta: 120, longitudeDelta: 300)))
     @State private var focusedFlightID: String?
 
     private var state: FlightScreenState { model.state }
@@ -35,7 +36,10 @@ struct FlightExplorerView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { refreshButton }
                 .sheet(isPresented: $filtersOpen) { FilterSheet(model: model) }
-                .sheet(isPresented: Binding(get: { selectedDestination != nil }, set: { if !$0 { destination = nil } })) {
+                .sheet(
+                    isPresented: Binding(
+                        get: { selectedDestination != nil }, set: { if !$0 { destination = nil } })
+                ) {
                     if let group = selectedDestination {
                         NavigationStack {
                             flightList(group.flights) { flight in
@@ -49,12 +53,18 @@ struct FlightExplorerView: View {
                         .presentationDetents([.medium, .large])
                     }
                 }
-                .sheet(isPresented: Binding(get: { detailOpen && state.selectedFlight != nil && !mapMode }, set: { detailOpen = $0 })) {
+                .sheet(
+                    isPresented: Binding(
+                        get: { detailOpen && state.selectedFlight != nil && !mapMode },
+                        set: { detailOpen = $0 })
+                ) {
                     if let flight = state.selectedFlight {
-                        FlightDetailSheet(flight: flight, model: model, showOnMap: {
-                            detailOpen = false
-                            mapMode = true
-                        })
+                        FlightDetailSheet(
+                            flight: flight, model: model,
+                            showOnMap: {
+                                detailOpen = false
+                                mapMode = true
+                            })
                     }
                 }
             }
@@ -65,14 +75,20 @@ struct FlightExplorerView: View {
                 VStack(spacing: 0) {
                     statusBanner
                     if state.saved.isEmpty {
-                        ContentUnavailableView("Your next trip starts here", systemImage: "bookmark", description: Text("Save flights from Discover to find them here, even offline."))
+                        ContentUnavailableView(
+                            "Your next trip starts here", systemImage: "bookmark",
+                            description: Text(
+                                "Save flights from Discover to find them here, even offline."))
                     } else {
                         flightList(state.saved) { savedDetailID = $0.id }
                     }
                 }
                 .navigationTitle("Saved flights")
                 .toolbar { refreshButton }
-                .sheet(isPresented: Binding(get: { savedDetail != nil }, set: { if !$0 { savedDetailID = nil } })) {
+                .sheet(
+                    isPresented: Binding(
+                        get: { savedDetail != nil }, set: { if !$0 { savedDetailID = nil } })
+                ) {
                     if let flight = savedDetail {
                         FlightDetailSheet(flight: flight, model: model, showOnMap: nil)
                     }
@@ -87,18 +103,32 @@ struct FlightExplorerView: View {
         .onChange(of: selectedDestination?.airport) { _, airport in
             if airport == nil { destination = nil }
         }
-        .alert("Change not saved", isPresented: Binding(get: { state.actionError != nil }, set: { if !$0 { model.store.dismissActionError() } })) {
+        .alert(
+            "Change not saved",
+            isPresented: Binding(
+                get: { state.actionError != nil },
+                set: { if !$0 { model.store.dismissActionError() } })
+        ) {
             Button("OK") { model.store.dismissActionError() }
-        } message: { Text(state.actionError ?? "") }
+        } message: {
+            Text(state.actionError ?? "")
+        }
     }
 
     private var refreshButton: some View {
-        Button { model.store.refresh() } label: { Label("Refresh", systemImage: "arrow.clockwise") }
-            .disabled(state.refreshing || state.loading)
+        Button {
+            model.store.refresh()
+        } label: {
+            Label("Refresh", systemImage: "arrow.clockwise")
+        }
+        .disabled(state.refreshing || state.loading)
     }
 
     @ViewBuilder private var statusBanner: some View {
-        if state.refreshing { ProgressView().frame(maxWidth: .infinity).padding(4).accessibilityLabel("Refreshing flights") }
+        if state.refreshing {
+            ProgressView().frame(maxWidth: .infinity).padding(4).accessibilityLabel(
+                "Refreshing flights")
+        }
         if let error = state.refreshError {
             HStack {
                 Image(systemName: "wifi.exclamationmark")
@@ -114,19 +144,31 @@ struct FlightExplorerView: View {
     private var searchControls: some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
-                searchField("From", value: Binding(get: { state.filters.origin }, set: { model.setOrigin($0) }))
-                searchField("To", value: Binding(get: { state.filters.destination }, set: { model.setDestination($0) }))
+                searchField(
+                    "From",
+                    value: Binding(
+                        get: { state.filters.origin }, set: { model.setOrigin($0) }))
+                searchField(
+                    "To",
+                    value: Binding(
+                        get: { state.filters.destination },
+                        set: { model.setDestination($0) }))
             }
             HStack {
                 Text("\(state.flights.count) flights").font(.subheadline.weight(.semibold))
                 Spacer()
-                Button { filtersOpen = true } label: { Label("Filters", systemImage: "slider.horizontal.3") }
+                Button {
+                    filtersOpen = true
+                } label: {
+                    Label("Filters", systemImage: "slider.horizontal.3")
+                }
                 Button("Reset") { model.store.resetFilters() }
             }
             if !state.filters.activeLabels.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack {
-                        ForEach(Array(state.filters.activeLabels.enumerated()), id: \.offset) { _, label in
+                        ForEach(Array(state.filters.activeLabels.enumerated()), id: \.offset) {
+                            _, label in
                             Button(label) { filtersOpen = true }
                                 .font(.caption).padding(.horizontal, 10).padding(.vertical, 6)
                                 .background(Color.teal.opacity(0.1), in: Capsule())
@@ -152,7 +194,9 @@ struct FlightExplorerView: View {
                 .accessibilityLabel("\(title) airport or city")
         }
         .padding(12)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+        .background(
+            Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12)
+        )
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.secondary.opacity(0.2)))
     }
 
@@ -162,26 +206,39 @@ struct FlightExplorerView: View {
             ProgressView("Finding flights…")
             Spacer()
         } else if !state.hasCache {
-            ContentUnavailableView("Flights are unavailable", systemImage: "wifi.slash", description: Text("Start the local API and use Retry or Refresh."))
+            ContentUnavailableView(
+                "Flights are unavailable", systemImage: "wifi.slash",
+                description: Text("Start the local API and use Retry or Refresh."))
         } else if state.flights.isEmpty {
-            ContentUnavailableView(state.cacheCount == 0 ? "No flights available" : "No matching flights", systemImage: "magnifyingglass",
-                description: Text(state.cacheCount == 0 ? "The API returned an empty list. Try refreshing later." : "Try a different route or reset your filters."))
+            ContentUnavailableView(
+                state.cacheCount == 0 ? "No flights available" : "No matching flights",
+                systemImage: "magnifyingglass",
+                description: Text(
+                    state.cacheCount == 0
+                        ? "The API returned an empty list. Try refreshing later."
+                        : "Try a different route or reset your filters."))
         } else if mapMode {
-            FlightMapView(groups: state.destinations, selected: state.selectedFlight, position: $mapPosition,
+            FlightMapView(
+                groups: state.destinations, selected: state.selectedFlight, position: $mapPosition,
                 focusSelection: focusedFlightID != state.selectedFlight?.id,
-                onFocused: { focusedFlightID = $0 }, onDestination: { destination = $0 })
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    if let flight = state.selectedFlight {
-                        VStack(spacing: 0) {
-                            FlightCard(flight: flight, model: model, onSelect: nil)
-                            Button("Close selection") { model.store.selectFlight(id: nil) }.padding(.bottom, 8)
-                        }
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-                        .padding(12)
+                onFocused: { focusedFlightID = $0 }, onDestination: { destination = $0 }
+            )
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if let flight = state.selectedFlight {
+                    VStack(spacing: 0) {
+                        FlightCard(flight: flight, model: model, onSelect: nil)
+                        Button("Close selection") { model.store.selectFlight(id: nil) }.padding(
+                            .bottom, 8)
                     }
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .padding(12)
                 }
+            }
         } else {
-            flightList(state.flights) { select($0); detailOpen = true }
+            flightList(state.flights) {
+                select($0)
+                detailOpen = true
+            }
         }
     }
 
@@ -190,12 +247,15 @@ struct FlightExplorerView: View {
         focusedFlightID = nil
     }
 
-    private func flightList(_ flights: [Flight], onSelect: @escaping (Flight) -> Void) -> some View {
+    private func flightList(_ flights: [Flight], onSelect: @escaping (Flight) -> Void) -> some View
+    {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(flights, id: \.id) { flight in
                     FlightCard(flight: flight, model: model, onSelect: { onSelect(flight) })
-                        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+                        .background(
+                            Color(.secondarySystemGroupedBackground),
+                            in: RoundedRectangle(cornerRadius: 16))
                 }
             }.padding()
         }
@@ -211,29 +271,48 @@ struct FlightCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ViewThatFits(in: .horizontal) {
-                HStack { route; Spacer(); price }
-                VStack(alignment: .leading) { route; price }
+                HStack {
+                    route
+                    Spacer()
+                    price
+                }
+                VStack(alignment: .leading) {
+                    route
+                    price
+                }
             }
             Text("\(flight.originCity) to \(flight.destinationCity)").font(.subheadline)
-            Text("\(flight.departureDate) · \(flight.cabin)").font(.subheadline).foregroundStyle(.secondary)
+            Text("\(flight.departureDate) · \(flight.cabin)").font(.subheadline).foregroundStyle(
+                .secondary)
             HStack {
                 Text(flight.program).font(.caption.weight(.semibold))
                 Spacer()
                 if let onSelect { Button("Details", action: onSelect) }
-                Button { model.toggleSave(flight) } label: {
-                    if model.state.isPending(id: flight.id) { ProgressView() }
-                    else { Text(model.state.isSaved(id: flight.id) ? "Remove" : "Save") }
+                Button {
+                    model.toggleSave(flight)
+                } label: {
+                    if model.state.isPending(id: flight.id) {
+                        ProgressView()
+                    } else {
+                        Text(model.state.isSaved(id: flight.id) ? "Remove" : "Save")
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(model.state.isPending(id: flight.id))
-                .accessibilityLabel("\(model.state.isSaved(id: flight.id) ? "Remove saved" : "Save") flight \(flight.origin) to \(flight.destination) on \(flight.departureDate)")
+                .accessibilityLabel(
+                    "\(model.state.isSaved(id: flight.id) ? "Remove saved" : "Save") flight \(flight.origin) to \(flight.destination) on \(flight.departureDate)"
+                )
             }
         }
         .padding(16)
     }
 
-    private var route: some View { Text("\(flight.origin) → \(flight.destination)").font(.title3.weight(.bold)) }
-    private var price: some View { Text("\(Int(flight.points).formatted()) pts").font(.headline).foregroundStyle(.teal) }
+    private var route: some View {
+        Text("\(flight.origin) → \(flight.destination)").font(.title3.weight(.bold))
+    }
+    private var price: some View {
+        Text("\(Int(flight.points).formatted()) pts").font(.headline).foregroundStyle(.teal)
+    }
 }
 
 private struct FlightDetailSheet: View {
@@ -248,7 +327,12 @@ private struct FlightDetailSheet: View {
             ScrollView {
                 FlightMapView(groups: [], selected: flight, position: $position).frame(height: 250)
                 FlightCard(flight: flight, model: model, onSelect: nil)
-                if let showOnMap { Button("Show on discovery map") { dismiss(); showOnMap() }.buttonStyle(.bordered) }
+                if let showOnMap {
+                    Button("Show on discovery map") {
+                        dismiss()
+                        showOnMap()
+                    }.buttonStyle(.bordered)
+                }
             }
             .accessibilityIdentifier("flight-detail-content")
             .navigationTitle("Flight details")
@@ -281,8 +365,12 @@ private struct FilterSheet: View {
     init(model: FlightModel) {
         self.model = model
         let filters = model.state.filters
-        _start = State(initialValue: Self.formatter.date(from: filters.startDate) ?? Self.formatter.date(from: ModelsKt.FIRST_DATE)!)
-        _end = State(initialValue: Self.formatter.date(from: filters.endDate) ?? Self.formatter.date(from: ModelsKt.LAST_DATE)!)
+        _start = State(
+            initialValue: Self.formatter.date(from: filters.startDate) ?? Self.formatter.date(
+                from: ModelsKt.FIRST_DATE)!)
+        _end = State(
+            initialValue: Self.formatter.date(from: filters.endDate) ?? Self.formatter.date(
+                from: ModelsKt.LAST_DATE)!)
         _cabin = State(initialValue: filters.cabin)
         _maximum = State(initialValue: filters.maximumPoints?.stringValue ?? "")
         _programs = State(initialValue: Set(filters.programs))
@@ -299,17 +387,30 @@ private struct FilterSheet: View {
                 Section("Cabin and points") {
                     Picker("Cabin", selection: $cabin) {
                         Text("Any cabin").tag("")
-                        ForEach(["Economy", "Premium Economy", "Business"], id: \.self) { Text($0).tag($0) }
+                        ForEach(["Economy", "Premium Economy", "Business"], id: \.self) {
+                            Text($0).tag($0)
+                        }
                     }
                     .accessibilityIdentifier("cabin-filter")
                     TextField("Maximum points · no limit", text: $maximum).keyboardType(.numberPad)
                         .accessibilityLabel("Maximum points")
                 }
                 Section("Loyalty programs · any selected") {
-                    ForEach(["Aeroplan", "Avios", "Flying Blue", "Mileage Plan", "MileagePlus"], id: \.self) { program in
-                        Toggle(program, isOn: Binding(get: { programs.contains(program) }, set: {
-                            if $0 { programs.insert(program) } else { programs.remove(program) }
-                        }))
+                    ForEach(
+                        ["Aeroplan", "Avios", "Flying Blue", "Mileage Plan", "MileagePlus"],
+                        id: \.self
+                    ) { program in
+                        Toggle(
+                            program,
+                            isOn: Binding(
+                                get: { programs.contains(program) },
+                                set: {
+                                    if $0 {
+                                        programs.insert(program)
+                                    } else {
+                                        programs.remove(program)
+                                    }
+                                }))
                     }
                 }
                 if let error { Section { Text(error).foregroundStyle(.red) } }
@@ -320,7 +421,10 @@ private struct FilterSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Apply") {
-                        error = model.store.applyFilters(startDate: Self.formatter.string(from: start), endDate: Self.formatter.string(from: end), cabin: cabin, maximumPoints: maximum, programs: Array(programs))
+                        error = model.store.applyFilters(
+                            startDate: Self.formatter.string(from: start),
+                            endDate: Self.formatter.string(from: end), cabin: cabin,
+                            maximumPoints: maximum, programs: Array(programs))
                         if error == nil { dismiss() }
                     }
                 }

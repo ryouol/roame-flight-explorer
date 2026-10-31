@@ -8,8 +8,8 @@ Verified October 30–31, 2026 on an Apple Silicon Mac. These are checks actuall
 | --- | --- |
 | Gradle 9.7.0 wrapper JAR and distribution | Matched Gradle's published checksums |
 | Python API tests | 3 passed: exact fixture envelope/content type, unknown-route 404, alternate empty fixture |
-| Shared Android host tests | 14 passed |
-| Shared iOS simulator tests | The same 14 passed on iOS 27.2 ARM64 |
+| Shared Android host tests | 15 passed |
+| Shared iOS simulator tests | The same 15 passed on iOS 27.2 ARM64 |
 | Android debug app and test APKs | Built; Android lint passed |
 | iOS app and UI test bundle | Built with Xcode 27.2, Swift 6, ARM64 simulator |
 
@@ -31,6 +31,16 @@ Android ran on an API 36 ARM64 Google APIs emulator; an API 37.0 emulator also i
 - Google's Android map key was restricted to the app package, local debug certificate, and Maps SDK. Actual map rendering and marker interaction passed. The key is excluded from source control and the submission archive.
 
 The host initially struggled with two concurrent simulators; an Android initial-load timeout disappeared when testing one platform at a time. A Maps crash on older Google Play services was fixed by declaring the documented optional Apache HTTP library. Test-selector issues found during automation were corrected against the controls' actual accessibility trees.
+
+## October 31 readability review
+
+The simplify/code-review passes and all fixes are recorded in `CODE_REVIEW.md`. The cleanup rechecked both native builds, Android lint, all 15 shared tests on each platform, and the three API tests. The added shared test verifies saved-flight ordering across load, save, and remove.
+
+Android passed eight native tests: three existing screen flows, two route-bounds checks, the rendered map viewport check, and two new selection regressions. The regressions remove a saved flight from its detail sheet and save it again, and remove/restore an open destination through refresh. Neither old sheet reopens.
+
+The iOS combined-filter check and both new sheet-selection regressions passed. The destination regression uses `scripts/selection_test_server.py` to remove the open group during a delayed refresh, then restore it. Native testing also exposed a fast-entry race in the SwiftUI observation wrapper; synchronous text publication fixes it, and the shared UI search helper now checks the exact entered strings. Both regression flows passed those exact-text assertions. Test automation was corrected to target the open detail sheet and wait for native dismissal animations.
+
+The earlier offline-relaunch walkthrough and large-text checks above were not repeated solely for this cleanup. The shared database reopen, independent snapshots, rollback, and failed-write checks were rerun. The existing recording still shows the same normal discovery and offline flows; it does not demonstrate the newly added edge-case regressions.
 
 ## Limits
 

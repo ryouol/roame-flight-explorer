@@ -12,9 +12,13 @@ data class PersistedFlights(
 
 interface FlightPersistence {
     fun read(): PersistedFlights
+
     fun replaceCache(flights: List<Flight>, refreshedAt: String)
+
     fun save(flight: Flight)
+
     fun remove(id: String)
+
     fun close() {}
 }
 
@@ -36,8 +40,14 @@ class SqlFlightPersistence(private val driver: SqlDriver) : FlightPersistence {
         queries.setMetadata(refreshedAt)
     }
 
-    override fun save(flight: Flight) { queries.saveFlight(flight.id, flightJson.encodeToString(flight)) }
-    override fun remove(id: String) { queries.removeSaved(id) }
+    override fun save(flight: Flight) {
+        queries.saveFlight(flight.id, flightJson.encodeToString(flight))
+    }
+
+    override fun remove(id: String) {
+        queries.removeSaved(id)
+    }
+
     override fun close() = driver.close()
 }
 
@@ -45,9 +55,17 @@ class SqlFlightPersistence(private val driver: SqlDriver) : FlightPersistence {
 class LazyFlightPersistence(factory: () -> FlightPersistence) : FlightPersistence {
     private val lazyDelegate = lazy(factory)
     private val delegate by lazyDelegate
+
     override fun read() = delegate.read()
-    override fun replaceCache(flights: List<Flight>, refreshedAt: String) = delegate.replaceCache(flights, refreshedAt)
+
+    override fun replaceCache(flights: List<Flight>, refreshedAt: String) =
+        delegate.replaceCache(flights, refreshedAt)
+
     override fun save(flight: Flight) = delegate.save(flight)
+
     override fun remove(id: String) = delegate.remove(id)
-    override fun close() { if (lazyDelegate.isInitialized()) delegate.close() }
+
+    override fun close() {
+        if (lazyDelegate.isInitialized()) delegate.close()
+    }
 }

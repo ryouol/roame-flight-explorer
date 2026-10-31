@@ -31,6 +31,7 @@ data class FlightScreenState(
     val pendingIds: Set<String> = emptySet(),
 ) {
     fun isSaved(id: String): Boolean = saved.any { it.id == id }
+
     fun isPending(id: String): Boolean = id in pendingIds
 }
 
@@ -50,12 +51,16 @@ class FlightStore(
     private val selectedId = MutableStateFlow<String?>(null)
     private val mutableState = MutableStateFlow(FlightScreenState())
     val state = mutableState.asStateFlow()
-    val currentState: FlightScreenState get() = state.value
+    val currentState: FlightScreenState
+        get() = state.value
+
     private var loaded = false
 
     init {
         scope.launch {
-            combine(repository.state, filters, selectedId) { data, filter, selection -> Triple(data, filter, selection) }
+            combine(repository.state, filters, selectedId) { data, filter, selection ->
+                    Triple(data, filter, selection)
+                }
                 .mapLatest { (data, filter, selection) ->
                     withContext(worker) {
                         val flights = filterFlights(data.cached, filter)
@@ -75,7 +80,8 @@ class FlightStore(
                             pendingIds = data.pendingIds,
                         ) to selection
                     }
-                }.collect { (screen, requestedSelection) ->
+                }
+                .collect { (screen, requestedSelection) ->
                     if (screen.filters != filters.value) return@collect
                     if (requestedSelection != null && screen.selectedFlight == null) {
                         selectedId.compareAndSet(requestedSelection, null)
@@ -91,28 +97,61 @@ class FlightStore(
 
     private fun updateFilters(value: FlightFilters) {
         filters.value = value
-        // Native text fields need their edited value immediately, before background filtering finishes.
+        // Native text fields need their edited value immediately, before background filtering
+        // finishes.
         mutableState.update { it.copy(filters = value) }
     }
+
     fun setOrigin(value: String) = updateFilters(filters.value.copy(origin = value))
+
     fun setDestination(value: String) = updateFilters(filters.value.copy(destination = value))
 
-    fun applyFilters(startDate: String, endDate: String, cabin: String, maximumPoints: String, programs: List<String>): String? {
+    fun applyFilters(
+        startDate: String,
+        endDate: String,
+        cabin: String,
+        maximumPoints: String,
+        programs: List<String>,
+    ): String? {
         val points = maximumPoints.trim().takeIf { it.isNotEmpty() }
         val number = points?.toIntOrNull()
         if (points != null && number == null) return "Enter a whole number for maximum points."
-        val next = filters.value.copy(startDate = startDate, endDate = endDate, cabin = cabin,
-            maximumPoints = number, programs = programs.toSet())
-        next.validationError()?.let { return it }
+        val next =
+            filters.value.copy(
+                startDate = startDate,
+                endDate = endDate,
+                cabin = cabin,
+                maximumPoints = number,
+                programs = programs.toSet(),
+            )
+        next.validationError()?.let {
+            return it
+        }
         updateFilters(next)
         return null
     }
 
     fun resetFilters() = updateFilters(FlightFilters())
-    fun selectFlight(id: String?) { selectedId.value = id }
-    fun refresh() { scope.launch { if (!loaded) loaded = repository.load(); if (loaded) repository.refresh() } }
-    fun saveFlight(flight: Flight) { scope.launch { repository.save(flight) } }
-    fun removeFlight(id: String) { scope.launch { repository.remove(id) } }
+
+    fun selectFlight(id: String?) {
+        selectedId.value = id
+    }
+
+    fun refresh() {
+        scope.launch {
+            if (!loaded) loaded = repository.load()
+            if (loaded) repository.refresh()
+        }
+    }
+
+    fun saveFlight(flight: Flight) {
+        scope.launch { repository.save(flight) }
+    }
+
+    fun removeFlight(id: String) {
+        scope.launch { repository.remove(id) }
+    }
+
     fun dismissActionError() = repository.dismissActionError()
 
     fun close() {

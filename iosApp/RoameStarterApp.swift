@@ -1,5 +1,5 @@
-import SwiftUI
 import Shared
+import SwiftUI
 
 @main
 struct RoameStarterApp: App {
@@ -30,8 +30,11 @@ final class FlightModel: ObservableObject {
     }
 
     func toggleSave(_ flight: Flight) {
-        if state.isSaved(id: flight.id) { store.removeFlight(id: flight.id) }
-        else { store.saveFlight(flight: flight) }
+        if state.isSaved(id: flight.id) {
+            store.removeFlight(id: flight.id)
+        } else {
+            store.saveFlight(flight: flight)
+        }
     }
 
     func setOrigin(_ value: String) {

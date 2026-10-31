@@ -11,13 +11,16 @@ internal val flightJson = Json { ignoreUnknownKeys = true }
 
 interface FlightSource {
     suspend fun fetch(): List<Flight>
+
     fun close() {}
 }
 
 class FlightApi(private val client: HttpClient, private val baseUrl: String) : FlightSource {
     override suspend fun fetch(): List<Flight> {
         val response = client.get("${baseUrl.trimEnd('/')}/flights")
-        check(response.status == HttpStatusCode.OK) { "Unexpected response: ${response.status.value}" }
+        check(response.status == HttpStatusCode.OK) {
+            "Unexpected response: ${response.status.value}"
+        }
         val flights = flightJson.decodeFromString<FlightsResponse>(response.bodyAsText()).flights
         require(flights.map { it.id }.toSet().size == flights.size) { "Duplicate flight IDs" }
         flights.forEach {

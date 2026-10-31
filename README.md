@@ -150,9 +150,11 @@ Use the same project, scheme, destination and derived-data arguments with `test-
 
 - `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testOnline`: fresh app data, API running; leaves one saved flight.
 - `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testCombinedFilters`: API running; combines cabin, multiple programs, points, and a changed start date.
+- `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testRemovedSavedDetailStaysDismissed`: fresh app data, API running; removes a flight from its saved detail sheet, saves it again, and checks that the old detail stays dismissed.
+- `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testRemovedDestinationStaysDismissed`: run separately, replacing the normal API with `python3 scripts/selection_test_server.py`; removes the open destination during a delayed refresh, then restores it and checks that the sheet stays dismissed. Stop this test server afterward.
 - `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testOfflineRelaunch`: API stopped, preserve the previous app data; verifies cached search and removes that saved flight.
 - `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testColdStartFailure`: API stopped, uninstall/reinstall the app first to clear this disposable installation's data.
 
 Set `DEVELOPER_DIR` as above when Xcode is not the active command-line installation. Offline tests skip while the API is running; execute the phases separately in the stated order.
 
-Test evidence and verification limits are in `docs/VALIDATION.md`. Architecture, assumptions, and AI use are in `docs/SUBMISSION.md`. The walkthrough sequence is in `docs/WALKTHROUGH.md`.
+Test evidence and verification limits are in `docs/VALIDATION.md`. Architecture, assumptions, and AI use are in `docs/SUBMISSION.md`. The walkthrough sequence is in `docs/WALKTHROUGH.md`. Review findings and readability improvements are recorded in `docs/CODE_REVIEW.md`.

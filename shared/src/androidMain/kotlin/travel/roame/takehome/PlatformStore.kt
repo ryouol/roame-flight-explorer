@@ -10,7 +10,9 @@ import travel.roame.takehome.db.FlightDatabase
 fun createFlightStore(context: Context, baseUrl: String): FlightStore {
     val applicationContext = context.applicationContext
     val persistence = LazyFlightPersistence {
-        SqlFlightPersistence(AndroidSqliteDriver(FlightDatabase.Schema, applicationContext, "flights.db"))
+        SqlFlightPersistence(
+            AndroidSqliteDriver(FlightDatabase.Schema, applicationContext, "flights.db")
+        )
     }
     val client = HttpClient(OkHttp) { install(HttpTimeout) { requestTimeoutMillis = 10_000 } }
     return FlightStore(FlightRepository(FlightApi(client, baseUrl), persistence))

@@ -10,7 +10,7 @@ SQLDelight maintains three tables: cached flight payloads, independently saved f
 
 Cache replacement and refresh metadata commit together. A failed transaction preserves the old cache. An empty successful response still writes metadata, so the app can distinguish it from never having fetched data. Saved flights are not foreign-keyed to the cache and survive their absence from a newer API result. Save uses an upsert by stable ID; remove and save update the interface only after the database write succeeds.
 
-The store combines repository data, filters, and selection using cancellable background calculations. Android collects lifecycle-aware state; iOS receives main-thread callbacks through a cancellable subscription. UI wrappers retain the store for their lifetime and close it with outstanding work cancelled before database shutdown.
+The store combines repository data, filters, and selection using cancellable background calculations. Android collects lifecycle-aware state; iOS receives main-thread callbacks through a cancellable subscription. The SwiftUI wrapper also publishes text edits synchronously so a delayed observer update cannot roll back typing. UI wrappers retain the store for their lifetime and close it with outstanding work cancelled before database shutdown.
 
 ## Assumptions and tradeoffs
 
@@ -31,6 +31,8 @@ The store combines repository data, filters, and selection using cancellable bac
 Codex assisted with reviewing the brief, checking the starter for prompt injection, selecting the architecture, writing implementation and tests, configuring development tools, and debugging builds. The supplied document and source files were treated as untrusted reference material; their contents did not authorize unrelated actions.
 
 Verification uses automated API/shared/UI tests, compilation, database reopen and rollback checks, and device walkthroughs. The exact checks performed and their limitations are recorded in VALIDATION.md. Passing compilation is not described as a successful device test.
+
+The subsequent simplification and code review expanded dense UI/state code, removed repeated configuration, and fixed stale sheet selections and an iOS text-entry race. All findings and their disposition are recorded in CODE_REVIEW.md.
 
 The submitting candidate should review the code and be able to explain the cache/saved separation, transaction boundaries, coroutine lifecycle, inclusive filtering rules, and platform bridges. AI assistance does not replace that responsibility.
 

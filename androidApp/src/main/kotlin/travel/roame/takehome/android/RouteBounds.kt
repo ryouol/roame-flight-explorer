@@ -11,7 +11,8 @@ internal fun routeBounds(origin: LatLng, destination: LatLng): LatLngBounds {
     val lat2 = Math.toRadians(destination.latitude)
     val lon1 = Math.toRadians(origin.longitude)
     val lon2 = Math.toRadians(destination.longitude)
-    val angle = acos((sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon2 - lon1)).coerceIn(-1.0, 1.0))
+    val angle =
+        acos((sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon2 - lon1)).coerceIn(-1.0, 1.0))
     val denominator = sin(angle)
     if (abs(denominator) < 1e-8) return bounds.build()
     for (step in 1 until 64) {

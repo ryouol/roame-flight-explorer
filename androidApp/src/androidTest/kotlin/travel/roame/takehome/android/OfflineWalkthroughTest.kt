@@ -12,15 +12,19 @@ import org.junit.Assume.assumeNotNull
 import org.junit.Rule
 import org.junit.Test
 
-/** Separate instrumentation invocations exercise a real process restart with the host API stopped. */
+/**
+ * Separate instrumentation invocations exercise a real process restart with the host API stopped.
+ */
 class OfflineWalkthroughTest {
     @get:Rule val compose = createEmptyComposeRule()
 
-    @Test fun walkthrough() {
+    @Test
+    fun walkthrough() {
         val arguments = InstrumentationRegistry.getArguments()
         val phase = arguments.getString("offlinePhase")
         assumeNotNull(phase) // Opt in with scripts/android_walkthrough.py.
-        if (phase != "offline") InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase("flights.db")
+        if (phase != "offline")
+            InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase("flights.db")
         ActivityScenario.launch(MainActivity::class.java).use {
             if (phase == "cold") {
                 awaitText("Flights are unavailable")
@@ -29,11 +33,14 @@ class OfflineWalkthroughTest {
                 return
             }
             awaitText("1000 flights")
-            if (phase == "offline") awaitText("Refresh unavailable. Showing saved device data; it may be out of date.")
+            if (phase == "offline")
+                awaitText("Refresh unavailable. Showing saved device data; it may be out of date.")
             pause()
             if (phase == "online") {
                 compose.onNodeWithText("Filters").performClick()
-                compose.onNode(hasSetTextAction() and hasText("Maximum points")).performTextInput("0")
+                compose
+                    .onNode(hasSetTextAction() and hasText("Maximum points"))
+                    .performTextInput("0")
                 compose.onNode(hasSetTextAction() and hasText("Maximum points")).performImeAction()
                 UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).waitForIdle()
                 compose.onNodeWithText("Apply filters").performScrollTo().performClick()
@@ -50,17 +57,21 @@ class OfflineWalkthroughTest {
             if (phase == "online") {
                 compose.onAllNodesWithText("Details").onFirst().performClick()
                 awaitText("Show on map")
-                compose.waitUntil(60_000) { compose.onAllNodesWithTag("map-loaded").fetchSemanticsNodes().isNotEmpty() }
+                compose.waitUntil(60_000) {
+                    compose.onAllNodesWithTag("map-loaded").fetchSemanticsNodes().isNotEmpty()
+                }
                 pause(5)
                 compose.onNodeWithText("Show on map").performClick()
                 awaitText("Close selection")
-                compose.waitUntil(60_000) { compose.onAllNodesWithTag("map-loaded").fetchSemanticsNodes().isNotEmpty() }
+                compose.waitUntil(60_000) {
+                    compose.onAllNodesWithTag("map-loaded").fetchSemanticsNodes().isNotEmpty()
+                }
                 pause(5)
                 compose.onNodeWithText("Close selection").performClick()
                 val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
                 device.waitForIdle()
-                val marker = device
-                    .wait(Until.findObject(By.descContains("BCN · 8 flights")), 15_000)
+                val marker =
+                    device.wait(Until.findObject(By.descContains("BCN · 8 flights")), 15_000)
                 assertNotNull("The destination marker must be accessible", marker)
                 marker.click()
                 awaitText("Barcelona · BCN")
@@ -83,10 +94,13 @@ class OfflineWalkthroughTest {
     }
 
     private fun awaitText(text: String) {
-        compose.waitUntil(30_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     private fun pause(seconds: Int = 2) {
-        if (InstrumentationRegistry.getArguments().getString("recording") == "true") Thread.sleep(seconds * 1_000L)
+        if (InstrumentationRegistry.getArguments().getString("recording") == "true")
+            Thread.sleep(seconds * 1_000L)
     }
 }
