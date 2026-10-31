@@ -3,9 +3,39 @@ import Shared
 
 @main
 struct RoameStarterApp: App {
+    @StateObject private var model = FlightModel()
+
     var body: some Scene {
         WindowGroup {
-            Text(Greeting().message())
+            FlightExplorerView(model: model)
+                .tint(.teal)
         }
+    }
+}
+
+@MainActor
+final class FlightModel: ObservableObject {
+    let store: FlightStore
+    @Published private(set) var state: FlightScreenState
+    private var subscription: FlightSubscription?
+
+    init() {
+        let store = PlatformStoreKt.createFlightStore(baseUrl: "http://localhost:8080")
+        self.store = store
+        self.state = store.currentState
+        subscription = store.observe { [weak self] state in
+            // The shared subscription delivers on Dispatchers.Main.
+            MainActor.assumeIsolated { self?.state = state }
+        }
+    }
+
+    func toggleSave(_ flight: Flight) {
+        if state.isSaved(id: flight.id) { store.removeFlight(id: flight.id) }
+        else { store.saveFlight(flight: flight) }
+    }
+
+    isolated deinit {
+        subscription?.cancel()
+        store.close()
     }
 }
