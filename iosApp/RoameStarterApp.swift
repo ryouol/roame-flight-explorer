@@ -34,6 +34,17 @@ final class FlightModel: ObservableObject {
         else { store.saveFlight(flight: flight) }
     }
 
+    func setOrigin(_ value: String) {
+        store.setOrigin(value: value)
+        // SwiftUI reads its binding again before the asynchronous subscription can deliver.
+        state = store.currentState
+    }
+
+    func setDestination(_ value: String) {
+        store.setDestination(value: value)
+        state = store.currentState
+    }
+
     isolated deinit {
         subscription?.cancel()
         store.close()

@@ -38,7 +38,7 @@ class FlightRepository(
     suspend fun load(): Boolean = try {
         databaseMutex.withLock {
             val stored = withContext(worker) { persistence.read() }
-            mutableState.update { it.copy(cached = stored.cached, saved = stored.saved,
+            mutableState.update { it.copy(cached = stored.cached, saved = stored.saved.sortedWith(flightOrder),
                 lastRefresh = stored.refreshedAt, loading = false, refreshError = null) }
         }
         true

@@ -59,10 +59,21 @@ class FlightStore(
                 .mapLatest { (data, filter, selection) ->
                     withContext(worker) {
                         val flights = filterFlights(data.cached, filter)
-                        FlightScreenState(filter, flights, aggregateDestinations(flights),
-                            data.saved.sortedWith(flightOrder), flights.find { it.id == selection },
-                            data.loading, data.refreshing, data.hasCache, data.cached.size,
-                            data.lastRefresh, data.refreshError, data.actionError, data.pendingIds) to selection
+                        FlightScreenState(
+                            filters = filter,
+                            flights = flights,
+                            destinations = aggregateDestinations(flights),
+                            saved = data.saved,
+                            selectedFlight = flights.find { it.id == selection },
+                            loading = data.loading,
+                            refreshing = data.refreshing,
+                            hasCache = data.hasCache,
+                            cacheCount = data.cached.size,
+                            lastRefresh = data.lastRefresh,
+                            refreshError = data.refreshError,
+                            actionError = data.actionError,
+                            pendingIds = data.pendingIds,
+                        ) to selection
                     }
                 }.collect { (screen, requestedSelection) ->
                     if (screen.filters != filters.value) return@collect

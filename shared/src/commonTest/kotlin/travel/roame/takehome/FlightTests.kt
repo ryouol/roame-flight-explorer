@@ -107,6 +107,23 @@ internal class FakePersistence : FlightPersistence {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RepositoryAndStoreTests {
+    @Test fun savedFlightsStaySortedAcrossLoadSaveAndRemove() = runTest {
+        val first = flight("first", points = 10_000)
+        val second = flight("second", points = 20_000)
+        val last = flight("last", date = LAST_DATE)
+        val storage = FakePersistence().apply {
+            data = PersistedFlights(emptyList(), listOf(last, first), "old")
+        }
+        val source = object : FlightSource { override suspend fun fetch() = emptyList<Flight>() }
+        val repository = FlightRepository(source, storage, StandardTestDispatcher(testScheduler))
+        repository.load()
+        assertEquals(listOf(first, last), repository.state.value.saved)
+        repository.save(second)
+        assertEquals(listOf(first, second, last), repository.state.value.saved)
+        repository.remove(first.id)
+        assertEquals(listOf(second, last), repository.state.value.saved)
+    }
+
     @Test fun failedRefreshPreservesCacheAndSuccessfulEmptyIsPersisted() = runTest {
         val storage = FakePersistence().apply { data = PersistedFlights(listOf(flight()), listOf(flight()), "old") }
         var fail = true

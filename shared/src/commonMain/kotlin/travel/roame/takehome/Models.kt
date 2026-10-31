@@ -84,6 +84,13 @@ fun filterFlights(flights: List<Flight>, filters: FlightFilters): List<Flight> {
 fun aggregateDestinations(flights: List<Flight>): List<DestinationGroup> =
     flights.groupBy { it.destination }.map { (airport, matches) ->
         val first = matches.first()
-        DestinationGroup(airport, first.destinationCity, first.destinationLatitude,
-            first.destinationLongitude, matches.sortedWith(flightOrder), matches.size, matches.minOf { it.points })
+        DestinationGroup(
+            airport = airport,
+            city = first.destinationCity,
+            latitude = first.destinationLatitude,
+            longitude = first.destinationLongitude,
+            flights = matches.sortedWith(flightOrder),
+            count = matches.size,
+            minimumPoints = matches.minOf { it.points },
+        )
     }.sortedBy { it.airport }

@@ -40,7 +40,6 @@ internal fun Int.pointsLabel() = NumberFormat.getIntegerInstance().format(this)
 @Composable
 fun FlightExplorer(store: FlightStore) {
     val state by store.state.collectAsStateWithLifecycle()
-    val focus = LocalFocusManager.current
     var savedTab by rememberSaveable { mutableStateOf(false) }
     var mapMode by rememberSaveable { mutableStateOf(false) }
     var filtersOpen by remember { mutableStateOf(false) }
@@ -53,6 +52,16 @@ fun FlightExplorer(store: FlightStore) {
     val listDetail = if (savedTab) state.saved.find { it.id == savedDetailId }
         else state.selectedFlight.takeIf { detailOpen && !mapMode }
     val select: (Flight) -> Unit = { store.selectFlight(it.id); focusedFlightId = null }
+    val group = state.destinations.find { it.airport == destination }
+
+    LaunchedEffect(savedDetailId, state.saved, state.loading) {
+        if (!state.loading && savedDetailId != null && state.saved.none { it.id == savedDetailId }) {
+            savedDetailId = null
+        }
+    }
+    LaunchedEffect(destination, group) {
+        if (destination != null && group == null) destination = null
+    }
 
     Scaffold(
         topBar = {
@@ -80,8 +89,8 @@ fun FlightExplorer(store: FlightStore) {
             }
             if (!savedTab) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = state.filters.origin, onValueChange = store::setOrigin, label = { Text("From") }, placeholder = { Text("Code or city") }, singleLine = true, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }), modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = state.filters.destination, onValueChange = store::setDestination, label = { Text("To") }, placeholder = { Text("Code or city") }, singleLine = true, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }), modifier = Modifier.weight(1f))
+                    AirportSearchField("From", state.filters.origin, store::setOrigin, Modifier.weight(1f))
+                    AirportSearchField("To", state.filters.destination, store::setDestination, Modifier.weight(1f))
                 }
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("${state.flights.size} flights", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
@@ -119,7 +128,6 @@ fun FlightExplorer(store: FlightStore) {
         }
     }
     if (filtersOpen) FilterSheet(state.filters, onDismiss = { filtersOpen = false }, onApply = store::applyFilters)
-    val group = state.destinations.find { it.airport == destination }
     if (group != null && !savedTab) ModalBottomSheet(onDismissRequest = { destination = null }) {
         Text("${group.city} · ${group.airport}", Modifier.padding(16.dp), style = MaterialTheme.typography.headlineSmall)
         Box(Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
@@ -137,6 +145,21 @@ fun FlightExplorer(store: FlightStore) {
         Spacer(Modifier.height(24.dp))
     }
     state.actionError?.let { error -> AlertDialog(onDismissRequest = store::dismissActionError, title = { Text("Change not saved") }, text = { Text(error) }, confirmButton = { TextButton(onClick = store::dismissActionError) { Text("OK") } }) }
+}
+
+@Composable
+private fun AirportSearchField(label: String, value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    val focus = LocalFocusManager.current
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        placeholder = { Text("Code or city") },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
+        modifier = modifier,
+    )
 }
 
 private fun toggleSave(store: FlightStore, state: FlightScreenState, flight: Flight) {

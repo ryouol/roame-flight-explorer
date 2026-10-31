@@ -16,6 +16,12 @@ struct FlightExplorerView: View {
     @State private var focusedFlightID: String?
 
     private var state: FlightScreenState { model.state }
+    private var selectedDestination: DestinationGroup? {
+        state.destinations.first { $0.airport == destination }
+    }
+    private var savedDetail: Flight? {
+        state.saved.first { $0.id == savedDetailID }
+    }
 
     var body: some View {
         TabView(selection: $savedTab) {
@@ -29,8 +35,8 @@ struct FlightExplorerView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { refreshButton }
                 .sheet(isPresented: $filtersOpen) { FilterSheet(model: model) }
-                .sheet(isPresented: Binding(get: { destination != nil }, set: { if !$0 { destination = nil } })) {
-                    if let group = state.destinations.first(where: { $0.airport == destination }) {
+                .sheet(isPresented: Binding(get: { selectedDestination != nil }, set: { if !$0 { destination = nil } })) {
+                    if let group = selectedDestination {
                         NavigationStack {
                             flightList(group.flights) { flight in
                                 select(flight)
@@ -66,14 +72,20 @@ struct FlightExplorerView: View {
                 }
                 .navigationTitle("Saved flights")
                 .toolbar { refreshButton }
-                .sheet(isPresented: Binding(get: { savedDetailID != nil && state.saved.contains { $0.id == savedDetailID } }, set: { if !$0 { savedDetailID = nil } })) {
-                    if let flight = state.saved.first(where: { $0.id == savedDetailID }) {
+                .sheet(isPresented: Binding(get: { savedDetail != nil }, set: { if !$0 { savedDetailID = nil } })) {
+                    if let flight = savedDetail {
                         FlightDetailSheet(flight: flight, model: model, showOnMap: nil)
                     }
                 }
             }
             .tabItem { Label("Saved (\(state.saved.count))", systemImage: "bookmark.fill") }
             .tag(true)
+        }
+        .onChange(of: savedDetail?.id) { _, id in
+            if id == nil { savedDetailID = nil }
+        }
+        .onChange(of: selectedDestination?.airport) { _, airport in
+            if airport == nil { destination = nil }
         }
         .alert("Change not saved", isPresented: Binding(get: { state.actionError != nil }, set: { if !$0 { model.store.dismissActionError() } })) {
             Button("OK") { model.store.dismissActionError() }
@@ -102,8 +114,8 @@ struct FlightExplorerView: View {
     private var searchControls: some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
-                searchField("From", value: Binding(get: { state.filters.origin }, set: { model.store.setOrigin(value: $0) }))
-                searchField("To", value: Binding(get: { state.filters.destination }, set: { model.store.setDestination(value: $0) }))
+                searchField("From", value: Binding(get: { state.filters.origin }, set: { model.setOrigin($0) }))
+                searchField("To", value: Binding(get: { state.filters.destination }, set: { model.setDestination($0) }))
             }
             HStack {
                 Text("\(state.flights.count) flights").font(.subheadline.weight(.semibold))
@@ -238,6 +250,7 @@ private struct FlightDetailSheet: View {
                 FlightCard(flight: flight, model: model, onSelect: nil)
                 if let showOnMap { Button("Show on discovery map") { dismiss(); showOnMap() }.buttonStyle(.bordered) }
             }
+            .accessibilityIdentifier("flight-detail-content")
             .navigationTitle("Flight details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { Button("Done") { dismiss() } }
@@ -256,20 +269,20 @@ private struct FilterSheet: View {
     @State private var programs: Set<String>
     @State private var error: String?
 
-    private static var formatter: DateFormatter {
+    private static let formatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
-    }
+    }()
 
     init(model: FlightModel) {
         self.model = model
         let filters = model.state.filters
-        _start = State(initialValue: Self.formatter.date(from: filters.startDate) ?? Self.formatter.date(from: "2027-02-01")!)
-        _end = State(initialValue: Self.formatter.date(from: filters.endDate) ?? Self.formatter.date(from: "2027-04-01")!)
+        _start = State(initialValue: Self.formatter.date(from: filters.startDate) ?? Self.formatter.date(from: ModelsKt.FIRST_DATE)!)
+        _end = State(initialValue: Self.formatter.date(from: filters.endDate) ?? Self.formatter.date(from: ModelsKt.LAST_DATE)!)
         _cabin = State(initialValue: filters.cabin)
         _maximum = State(initialValue: filters.maximumPoints?.stringValue ?? "")
         _programs = State(initialValue: Set(filters.programs))
