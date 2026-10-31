@@ -59,7 +59,8 @@ class FlightRepository(
                 mutableState.update { it.copy(cached = flights, lastRefresh = timestamp, refreshError = null) }
             }
         } catch (cancelled: CancellationException) { throw cancelled
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            println("Flight refresh failed: ${error::class.simpleName}: ${error.message}")
             mutableState.update { it.copy(refreshError = if (it.hasCache)
                 "Refresh unavailable. Showing saved device data; it may be out of date."
                 else "Flights could not be loaded. Check that the local API is running, then retry.") }

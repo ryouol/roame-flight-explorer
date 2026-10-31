@@ -28,7 +28,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun FlightTheme(content: @Composable () -> Unit) {
-    val colors = if (isSystemInDarkTheme()) darkColorScheme(primary = Color(0xFF76D7C4), secondary = Color(0xFFA2D5CF))
-    else lightColorScheme(primary = Color(0xFF006B60), secondary = Color(0xFF416B65), surface = Color(0xFFF7FBF9))
+    val colors = if (isSystemInDarkTheme()) darkColorScheme(
+        primary = Color(0xFF76D7C4), onPrimary = Color(0xFF00382F),
+        primaryContainer = Color(0xFF005047), secondary = Color(0xFFA2D5CF),
+        secondaryContainer = Color(0xFF264D47), background = Color(0xFF101917),
+        surface = Color(0xFF101917), surfaceContainer = Color(0xFF1B2522),
+        surfaceContainerLow = Color(0xFF15201D), surfaceContainerHigh = Color(0xFF26302D))
+    else lightColorScheme(
+        primary = Color(0xFF006B60), onPrimary = Color.White,
+        primaryContainer = Color(0xFFBDECE2), secondary = Color(0xFF416B65),
+        secondaryContainer = Color(0xFFD3EAE3), background = Color(0xFFF7FBF9),
+        surface = Color(0xFFF7FBF9), surfaceContainer = Color(0xFFEAF2ED),
+        surfaceContainerLow = Color.White, surfaceContainerHigh = Color(0xFFE1ECE5))
     MaterialTheme(colorScheme = colors, content = content)
 }

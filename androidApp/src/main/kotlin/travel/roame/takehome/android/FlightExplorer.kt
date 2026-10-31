@@ -23,6 +23,10 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.rememberCameraPositionState
 import travel.roame.takehome.*
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 internal fun Int.pointsLabel() = NumberFormat.getIntegerInstance().format(this)
 
@@ -140,17 +144,18 @@ private fun FlightList(flights: List<Flight>, state: FlightScreenState, onSelect
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun FlightCard(flight: Flight, state: FlightScreenState, onToggle: () -> Unit, onSelect: (() -> Unit)? = null) {
     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("${flight.origin} → ${flight.destination}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text("${flight.points.pointsLabel()} pts", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         }
         Text("${flight.originCity} to ${flight.destinationCity}", style = MaterialTheme.typography.bodyMedium)
         Text("${flight.departureDate} · ${flight.cabin}", style = MaterialTheme.typography.bodyMedium)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(flight.program, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+        Text(flight.program, style = MaterialTheme.typography.labelLarge)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
             if (onSelect != null) TextButton(onClick = onSelect) { Text("Details") }
             FilledTonalButton(onClick = onToggle, enabled = !state.isPending(flight.id), modifier = Modifier.semantics {
                 contentDescription = "${if (state.isSaved(flight.id)) "Remove saved" else "Save"} flight ${flight.origin} to ${flight.destination} on ${flight.departureDate}"
@@ -179,13 +184,15 @@ private fun FilterSheet(filters: FlightFilters, onDismiss: () -> Unit, onApply: 
     var maximum by remember { mutableStateOf(filters.maximumPoints?.toString() ?: "") }
     var programs by remember { mutableStateOf(filters.programs) }
     var error by remember { mutableStateOf<String?>(null) }
+    var editingStart by remember { mutableStateOf<Boolean?>(null) }
+    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") } }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Refine your flight", style = MaterialTheme.typography.headlineSmall)
             Text("Departure dates include both endpoints.", style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(start, { start = it }, label = { Text("From date") }, placeholder = { Text("YYYY-MM-DD") }, singleLine = true, modifier = Modifier.weight(1f))
-                OutlinedTextField(end, { end = it }, label = { Text("Through date") }, placeholder = { Text("YYYY-MM-DD") }, singleLine = true, modifier = Modifier.weight(1f))
+                OutlinedButton(onClick = { editingStart = true }, modifier = Modifier.weight(1f)) { Column { Text("From"); Text(start.ifBlank { "Any date" }) } }
+                OutlinedButton(onClick = { editingStart = false }, modifier = Modifier.weight(1f)) { Column { Text("Through"); Text(end.ifBlank { "Any date" }) } }
             }
             Text("Cabin", style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -203,6 +210,18 @@ private fun FilterSheet(filters: FlightFilters, onDismiss: () -> Unit, onApply: 
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(onClick = { error = onApply(start.trim(), end.trim(), cabin, maximum, programs.toList()); if (error == null) onDismiss() }, modifier = Modifier.fillMaxWidth()) { Text("Apply filters") }
             Spacer(Modifier.height(16.dp))
+        }
+    }
+    editingStart?.let { isStart ->
+        val date = if (isStart) start else end
+        val picker = rememberDatePickerState(initialSelectedDateMillis = runCatching { dateFormat.parse(date)?.time }.getOrNull())
+        DatePickerDialog(onDismissRequest = { editingStart = null }, confirmButton = {
+            TextButton(onClick = {
+                picker.selectedDateMillis?.let { if (isStart) start = dateFormat.format(Date(it)) else end = dateFormat.format(Date(it)) }
+                editingStart = null
+            }) { Text("Choose date") }
+        }, dismissButton = { TextButton(onClick = { editingStart = null }) { Text("Cancel") } }) {
+            DatePicker(state = picker)
         }
     }
 }

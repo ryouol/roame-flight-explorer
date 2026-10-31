@@ -33,6 +33,7 @@ class FlightApiTests(unittest.TestCase):
         with self.assertRaises(HTTPError) as caught:
             urlopen(self.url + "/private")
         self.assertEqual(caught.exception.code, 404)
+        caught.exception.close()
 
     def test_alternate_empty_fixture(self):
         with tempfile.TemporaryDirectory() as directory:
