@@ -1,0 +1,38 @@
+CREATE TABLE CachedFlight (
+    id TEXT NOT NULL PRIMARY KEY,
+    payload TEXT NOT NULL
+);
+
+CREATE TABLE SavedFlight (
+    id TEXT NOT NULL PRIMARY KEY,
+    payload TEXT NOT NULL
+);
+
+CREATE TABLE CacheMetadata (
+    singleton INTEGER NOT NULL PRIMARY KEY CHECK (singleton = 1),
+    refreshedAt TEXT NOT NULL
+);
+
+allCached:
+SELECT payload FROM CachedFlight ORDER BY id;
+
+allSaved:
+SELECT payload FROM SavedFlight ORDER BY id;
+
+metadata:
+SELECT refreshedAt FROM CacheMetadata WHERE singleton = 1;
+
+clearCache:
+DELETE FROM CachedFlight;
+
+insertCached:
+INSERT INTO CachedFlight(id, payload) VALUES (?, ?);
+
+setMetadata:
+INSERT OR REPLACE INTO CacheMetadata(singleton, refreshedAt) VALUES (1, ?);
+
+saveFlight:
+INSERT OR REPLACE INTO SavedFlight(id, payload) VALUES (?, ?);
+
+removeSaved:
+DELETE FROM SavedFlight WHERE id = ?;
