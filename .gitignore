@@ -10,5 +10,6 @@ __pycache__/
 *.pyc
 .venv/
 secrets.properties
+iosApp/Local.xcconfig
 *.xcuserstate
 work/

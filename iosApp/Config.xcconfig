@@ -1,0 +1,4 @@
+// Simulator default. Local overrides can set a phone's API host and signing team.
+FLIGHTS_API_HOST = localhost
+FLIGHTS_BUNDLE_IDENTIFIER = travel.roame.takehome.ios
+#include? "Local.xcconfig"

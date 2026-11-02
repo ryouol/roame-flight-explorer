@@ -33,11 +33,12 @@ def make_server(host="127.0.0.1", port=8080, fixture=DEFAULT_FIXTURE):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--host", default="127.0.0.1", help="Use 0.0.0.0 to allow phones on your local network")
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
     args = parser.parse_args()
-    with make_server(port=args.port, fixture=args.fixture) as server:
-        print(f"Flight API: http://localhost:{server.server_port}/flights", flush=True)
+    with make_server(host=args.host, port=args.port, fixture=args.fixture) as server:
+        print(f"Flight API listening on {args.host}:{server.server_port} (/flights)", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

@@ -1,6 +1,6 @@
 # Validation record
 
-Verified October 30–31, 2026 on an Apple Silicon Mac. These are checks actually performed, not a claim of exhaustive device coverage.
+Verified October 30–31, 2026 on an Apple Silicon Mac, with a physical iPhone smoke check on November 2. These are checks actually performed, not a claim of exhaustive device coverage.
 
 ## Builds and automated tests
 
@@ -42,9 +42,15 @@ The iOS combined-filter check and both new sheet-selection regressions passed. T
 
 The earlier offline-relaunch walkthrough and large-text checks above were not repeated solely for this cleanup. The shared database reopen, independent snapshots, rollback, and failed-write checks were rerun. The existing recording still shows the same normal discovery and offline flows; it does not demonstrate the newly added edge-case regressions.
 
+## November 2 physical iPhone setup
+
+Built, signed, installed, and launched the app on an iPhone 17 Pro Max running iOS 27.2. The phone reached the Mac's local API and visibly displayed all 1,000 flights. The signing team, device bundle identifier, and Mac hostname are configured in an ignored `Local.xcconfig`; they are excluded from the source archive.
+
+The simulator build passed with the original bundle identifier and localhost API address. All three Python API tests passed again. This physical-device check covered installation, launch, and initial loading; the full filter, map, saved-flight, and offline-relaunch flows above were verified on the simulator/emulator, not repeated on this phone.
+
 ## Limits
 
-No physical-device, release-signing, App Store/Play Store, exhaustive accessibility audit, or long-duration performance testing was performed. Native map gestures use the provider defaults; pan/zoom was not exhaustively automated. Offline flight data is supported; offline map-tile downloads are outside scope. Large-text checks cover the sizes above, not every accessibility setting or device size.
+No release-signing, App Store/Play Store, exhaustive accessibility audit, or long-duration performance testing was performed. Native map gestures use the provider defaults; pan/zoom was not exhaustively automated. Offline flight data is supported; offline map-tile downloads are outside scope. Large-text checks cover the sizes above, not every accessibility setting or device size.
 
 ## Evidence locations
 

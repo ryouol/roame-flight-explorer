@@ -40,6 +40,12 @@ Optional test data and port:
 python3 server/server.py --port 8081 --fixture /absolute/path/to/alternate.json
 ```
 
+For a physical iPhone on the same local network, allow connections from that network:
+
+```sh
+python3 server/server.py --host 0.0.0.0
+```
+
 The default fixture path is independent of the shell's working directory. Restart the server to load a changed fixture. The apps use port 8080 unless their injected base URLs are changed.
 
 ## 2. Android
@@ -90,6 +96,22 @@ Alternatively set the `MAPS_API_KEY` environment variable before building. Never
 4. Keep the local API running. The iOS simulator uses `http://localhost:8080`.
 
 MapKit uses Apple Maps; no Maps key is required. Local networking is allowed through the app's transport-security configuration.
+
+### Physical iPhone
+
+Connect and unlock the iPhone, trust the Mac if prompted, and enable Developer Mode in the phone's Privacy & Security settings. Sign in to your Apple Account in Xcode. The app uses automatic signing; a personal team is sufficient for local testing.
+
+Create an ignored `iosApp/Local.xcconfig` containing your Mac's local hostname, signing team ID, and a unique bundle identifier:
+
+```xcconfig
+FLIGHTS_API_HOST[sdk=iphoneos*] = YOUR_MAC.local
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+FLIGHTS_BUNDLE_IDENTIFIER[sdk=iphoneos*] = com.yourname.flightexplorer
+```
+
+`scutil --get LocalHostName` prints the Mac hostname; append `.local`. Start the API with `--host 0.0.0.0`, put both devices on the same Wi-Fi network, select your physical iPhone in Xcode, and run. Allow the app's Local Network prompt on the phone. If the first fetch precedes permission approval, tap Retry. The simulator continues to use localhost.
+
+Keep the Mac awake and the API running for fresh data. Once loaded, cached flights and saved snapshots work without the server. Apple personal-team installations expire and may require rebuilding; this is a development installation, not a TestFlight or App Store release.
 
 To build from the command line after Xcode setup:
 

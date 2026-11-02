@@ -20,7 +20,10 @@ final class FlightModel: ObservableObject {
     private var subscription: FlightSubscription?
 
     init() {
-        let store = PlatformStoreKt.createFlightStore(baseUrl: "http://localhost:8080")
+        guard let apiHost = Bundle.main.object(forInfoDictionaryKey: "FlightsAPIHost") as? String else {
+            preconditionFailure("Missing FLIGHTS_API_HOST build setting.")
+        }
+        let store = PlatformStoreKt.createFlightStore(baseUrl: "http://\(apiHost):8080")
         self.store = store
         self.state = store.currentState
         subscription = store.observe { [weak self] state in

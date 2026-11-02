@@ -23,7 +23,7 @@ The store combines repository data, filters, and selection using cancellable bac
 - Saved snapshots update when saved again; refresh does not silently rewrite independently saved details.
 - With 1,000 records, shared in-memory filtering is simpler than database-generated search queries. JSON payload storage keeps the persistence schema small; there is no need for indexed server-side searching at this scale.
 - The Python server is intentionally local and read-only. It has no authentication, deployment, or booking functionality.
-- Simulator/emulator networking is the supported demo setup. Map tiles require the map provider's network service; flight data does not.
+- Simulator/emulator networking is the default demo setup. A physical iPhone can use the Mac's local-network API through an ignored host/signing configuration. Map tiles require the map provider's network service; cached flight data does not.
 - No synchronization, sign-in, notifications, background refresh, or analytics are included.
 
 ## AI use and ownership
