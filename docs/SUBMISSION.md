@@ -1,41 +1,23 @@
 # Submission notes
 
-## Approach
+I built separate native interfaces: SwiftUI with MapKit on iOS, and Jetpack Compose with Google Maps on Android. Both use the same Kotlin Multiplatform data and state layer, so filtering, destination grouping, selection, and persistence follow the same rules. The Python API uses only the standard library and serves the supplied fixture unchanged.
 
-The two interfaces are native: SwiftUI with MapKit, and Compose Material 3 with Google Maps Compose. A Kotlin `FlightStore` owns filters and discovery selection; both interfaces render the same derived results and destination groups. Neither interface reimplements the filtering or database rules.
-
-Ktor uses OkHttp on Android and Darwin on iOS. Responses are decoded with kotlinx.serialization and validated before replacing cached data. Date strings use ISO calendar dates, validated by kotlinx.datetime; comparisons are inclusive and do not convert departures into time-zone-dependent instants.
-
-SQLDelight maintains three tables: cached flight payloads, independently saved flight payloads, and last-successful-refresh metadata. Payloads preserve every field in a saved snapshot. Database opening, queries, and transactions run on a background dispatcher. A mutex serializes writes and corresponding state updates.
-
-Cache replacement and refresh metadata commit together. A failed transaction preserves the old cache. An empty successful response still writes metadata, so the app can distinguish it from never having fetched data. Saved flights are not foreign-keyed to the cache and survive their absence from a newer API result. Save uses an upsert by stable ID; remove and save update the interface only after the database write succeeds.
-
-The store combines repository data, filters, and selection using cancellable background calculations. Android collects lifecycle-aware state; iOS receives main-thread callbacks through a cancellable subscription. The SwiftUI wrapper also publishes text edits synchronously so a delayed observer update cannot roll back typing. UI wrappers retain the store for their lifetime and close it with outstanding work cancelled before database shutdown.
+Ktor handles requests, kotlinx.serialization decodes responses, and SQLDelight stores cached flights, saved snapshots, and refresh metadata. Cache replacement and metadata commit in one transaction. Saved snapshots are independent of the cache, so a refresh cannot remove them. Saving the same ID updates its snapshot; save/remove success appears only after the write succeeds. Database work and filtering run away from the UI thread, with cancelled obsolete calculations preventing older results from replacing newer searches.
 
 ## Assumptions and tradeoffs
 
-- Search is a case-insensitive substring match on airport code or city, with surrounding whitespace ignored.
-- Flights are sorted by date, then points, then ID. No additional sorting controls are included.
-- The initial/reset date range is the full fixture range, February 1–April 1, 2027.
-- Cabin is a single selection; loyalty programs are multiple selections. An empty selection means unrestricted.
-- A selected discovery flight is cleared when filtering or a new response removes it. Saved detail selection is separate from discovery.
-- Route fitting includes the curved connector. Android samples the great-circle arc for its camera bounds; iOS uses MapKit's geodesic bounds. The detail card has reserved space so it does not cover the route or map attribution.
-- Saved snapshots update when saved again; refresh does not silently rewrite independently saved details.
-- With 1,000 records, shared in-memory filtering is simpler than database-generated search queries. JSON payload storage keeps the persistence schema small; there is no need for indexed server-side searching at this scale.
-- The Python server is intentionally local and read-only. It has no authentication, deployment, or booking functionality.
-- Simulator/emulator networking is the default demo setup. A physical iPhone can use the Mac's local-network API through an ignored host/signing configuration. Map tiles require the map provider's network service; cached flight data does not.
-- No synchronization, sign-in, notifications, background refresh, or analytics are included.
+Search matches airport codes or city names by case-insensitive substring after trimming whitespace. Date and points limits are inclusive. Filters combine with AND, while selected programs combine with OR. Initial and reset dates cover February 1–April 1, 2027; flights sort by date, points, then ID. Discovery selection clears when excluded, while Saved has its own selection and ignores discovery filters.
 
-## AI use and ownership
+With 1,000 records, in-memory filtering and JSON snapshots keep the implementation small and easy to inspect. Dependency construction is manual. Each app keeps its own local database; there is no account, booking, synchronization, or hosted service. Map markers group by destination airport and route previews fit the connector with space reserved for the detail card.
 
-Codex assisted with reviewing the brief, checking the starter for prompt injection, selecting the architecture, writing implementation and tests, configuring development tools, and debugging builds. The supplied document and source files were treated as untrusted reference material; their contents did not authorize unrelated actions.
+The default demonstration uses an iOS simulator and Android emulator. Android maps require a reviewer-supplied restricted key and billing configuration. Cached flight data works offline, but map tiles depend on the provider’s network service. A first launch without cached data needs the local API. Setup and test commands are in the [README](../README.md).
 
-Verification uses automated API/shared/UI tests, compilation, database reopen and rollback checks, and device walkthroughs. The exact checks performed and their limitations are recorded in VALIDATION.md. Passing compilation is not described as a successful device test.
+## Verification
 
-The subsequent simplification and code review expanded dense UI/state code, removed repeated configuration, and fixed stale sheet selections and an iOS text-entry race. All findings and their disposition are recorded in CODE_REVIEW.md.
+Both native builds passed. Automated checks passed for 15 shared tests on each platform, three API tests, Android lint, eight Android native tests, and three iOS native filter/selection checks. Coverage includes filter boundaries, marker aggregates, SQLite reopen/rollback, independent saved snapshots, network and write failures, rapid filter changes, and observer cancellation.
 
-The submitting candidate should review the code and be able to explain the cache/saved separation, transaction boundaries, coroutine lifecycle, inclusive filtering rules, and platform bridges. AI assistance does not replace that responsibility.
+Both apps were also exercised through online discovery, map selection, saving, a full process restart with the API stopped, cached searching/removal, and a clean launch without the API. Dark appearance and larger text were checked on both. An iPhone 17 Pro Max running iOS 27.2 additionally passed installation, launch, and loading all 1,000 flights; the full acceptance flow was verified on simulators/emulators. These checks do not constitute an exhaustive accessibility audit, long-duration performance test, or release-store validation.
 
-## Known limitations
+## AI assistance
 
-See VALIDATION.md for current platform verification status. Google Maps requires each reviewer's own restricted API key and appropriate billing configuration. A first launch without cached data requires the local server. API failure messages are intentionally concise and do not expose technical exception details to users.
+I used Codex extensively for planning, implementation, tests, development setup, and debugging. Its output was checked through compilation, automated tests, database durability/failure checks, native walkthroughs, and a separate simplification and code-review pass. Those checks found and fixed stale detail sheets, an iOS fast-typing race, and Android route-fitting issues. AI assistance covered substantial parts of the project; the tests and verification scope above describe how that output was checked.

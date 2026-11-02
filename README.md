@@ -1,107 +1,55 @@
 # Flight Explorer
 
-Native SwiftUI and Jetpack Compose flight discovery, backed by shared Kotlin Multiplatform networking, filtering, state, and SQLite persistence.
+Flight discovery for iOS and Android, built with SwiftUI/MapKit and Jetpack Compose/Google Maps. Both apps use one Kotlin Multiplatform layer for networking, filters, selection, and SQLite persistence. The fixture contains 1,000 flights. You can search, filter, explore destination markers, and save flights for later; cached searches and saved flights work after an offline restart.
 
-## What is included
+Architecture, tradeoffs, verification results, and AI disclosure are in [Submission notes](docs/SUBMISSION.md).
 
-- Discover 1,000 dated flights using origin/destination search, inclusive date and points bounds, cabin, and multiple loyalty programs.
-- Switch between a list and destination-grouped maps. Markers show flight count and lowest points price; selecting a flight shows its route.
-- Save complete flight snapshots on the device. Cached discovery and saved-flight removal work after relaunch without the API.
-- A standard-library Python API, shared tests, Android screen tests, and submission notes in `docs/`.
+## Setup
 
-## Prerequisites
+Use Python 3.10+, Android Studio with Android SDK 37.0 and Build Tools 37.0.0, and a Mac with full Xcode and an iOS simulator runtime. Tested with Android Studio Rabbit 2 and Xcode 27.2. Complete Xcode’s first-launch setup before building.
 
-- Python 3.10 or newer for the local API; no pip packages needed.
-- Android Studio compatible with AGP 9.3.1 (tested with Rabbit 2), Android SDK Platform **37.0**, Build Tools **37.0.0**, and an ARM64 Google APIs emulator on Apple Silicon.
-- A Mac with full Xcode 26 or newer (tested with 27.2) and an installed iOS simulator runtime for iOS. Apple command-line tools alone are insufficient.
-- Java for launching Gradle. Android Studio's bundled JDK works. The supplied wrapper selects/downloads JDK 25 for the daemon.
-
-The starter versions are preserved: Kotlin 2.4.21, Gradle 9.7.0, AGP 9.3.1, Compose BOM 2026.09.00, Activity 1.13.0, Swift 6. Added dependencies are pinned in the module build files.
-
-On a Mac without a separately registered JDK, set this in the terminal before the Gradle commands below:
+The starter toolchain is preserved: Kotlin 2.4.21, Gradle 9.7.0, AGP 9.3.1, Compose BOM 2026.09.00, and Swift 6. Gradle downloads JDK 25 on first use. If Java is not registered on your Mac, use Android Studio’s bundled JDK:
 
 ```sh
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 ```
 
-## 1. Run the local API
+Run every terminal command below from the repository root. First builds need internet access.
 
-From this repository:
+## Start the API
 
 ```sh
 python3 server/server.py
 ```
 
-`GET http://localhost:8080/flights` returns the original `fixtures/flights.json` envelope and HTTP 200. The API binds only to the local computer. Stop it with Ctrl-C.
+This serves `GET http://localhost:8080/flights` with the unchanged fixture envelope. No Python packages are needed. Keep it running while trying either app; Ctrl-C stops it. To test another response, use `--fixture /absolute/path/to/flights.json`; `--port` changes the server port but also requires changing the app’s injected URL.
 
-Optional test data and port:
+## Run Android
 
-```sh
-python3 server/server.py --port 8081 --fixture /absolute/path/to/alternate.json
-```
+Open the repository in Android Studio and let Gradle sync. Set `sdk.dir` in an ignored `local.properties` if Studio does not configure it automatically. Start a Google APIs emulator and run `androidApp`. Its API address is `http://10.0.2.2:8080`.
 
-For a physical iPhone on the same local network, allow connections from that network:
-
-```sh
-python3 server/server.py --host 0.0.0.0
-```
-
-The default fixture path is independent of the shell's working directory. Restart the server to load a changed fixture. The apps use port 8080 unless their injected base URLs are changed.
-
-## 2. Android
-
-1. Open this repository in Android Studio and let Gradle sync.
-2. Set your Android SDK location in ignored `local.properties`, for example:
-
-   ```properties
-   sdk.dir=/Users/YOUR_USER/Library/Android/sdk
-   ```
-
-3. Configure a Maps SDK for Android key as described below.
-4. Start a Google APIs emulator, select the `androidApp` run configuration, and run.
-
-The emulator accesses the host API at `http://10.0.2.2:8080`. The app allows cleartext HTTP only for this development host and localhost; other traffic uses HTTPS. Physical-device LAN setup is outside the demo scope.
-
-Command-line build and shared tests:
-
-```sh
-./gradlew :androidApp:assembleDebug :shared:testAndroidHostTest
-```
-
-APK: `androidApp/build/outputs/apk/debug/androidApp-debug.apk`.
-
-### Google Maps key
-
-Use a Google Cloud project with billing enabled and **Maps SDK for Android** enabled. Create an Android-restricted API key using:
-
-- Package: `travel.roame.takehome.android`
-- SHA-1 fingerprint from `./gradlew :androidApp:signingReport`
-- API restriction: Maps SDK for Android only
-
-Create an ignored `secrets.properties` at the repository root:
+For maps, enable billing and **Maps SDK for Android** in your Google Cloud project. Create a key restricted to package `travel.roame.takehome.android`, your debug certificate’s SHA-1 from `./gradlew :androidApp:signingReport`, and Maps SDK for Android. Follow [Google’s setup instructions](https://developers.google.com/maps/documentation/android-sdk/get-api-key). Put the key in an ignored root file:
 
 ```properties
-MAPS_API_KEY=YOUR_RESTRICTED_ANDROID_MAPS_KEY
+# secrets.properties
+MAPS_API_KEY=YOUR_ANDROID_MAPS_KEY
 ```
 
-Alternatively set the `MAPS_API_KEY` environment variable before building. Never commit a real key or signing keystore. Each reviewer needs a key restricted to their own debug signing certificate. Without a key, the app builds and lists/saved flights work, but the map shows a setup message.
+Alternatively, set the `MAPS_API_KEY` environment variable. Each reviewer needs their own key restriction. Without a key, lists and saved flights work and the map displays a setup message.
 
-[Google's Maps SDK setup guide](https://developers.google.com/maps/documentation/android-sdk/get-api-key)
+To build an APK:
 
-## 3. iOS
+```sh
+./gradlew :androidApp:assembleDebug
+```
 
-1. Install Xcode and an iOS simulator runtime, and complete Xcode's first-launch setup.
-2. Open `iosApp/RoameStarter.xcodeproj`.
-3. Select `RoameStarter` and an iPhone simulator, then build and run. The Xcode build phase builds and links `Shared` automatically.
-4. Keep the local API running. The iOS simulator uses `http://localhost:8080`.
+The output is `androidApp/build/outputs/apk/debug/androidApp-debug.apk`.
 
-MapKit uses Apple Maps; no Maps key is required. Local networking is allowed through the app's transport-security configuration.
+## Run iOS
 
-### Physical iPhone
+Open `iosApp/RoameStarter.xcodeproj`, select the `RoameStarter` scheme and an iPhone simulator, then Run. Xcode builds the shared Kotlin framework automatically. The simulator uses `http://localhost:8080`; MapKit needs no API key.
 
-Connect and unlock the iPhone, trust the Mac if prompted, and enable Developer Mode in the phone's Privacy & Security settings. Sign in to your Apple Account in Xcode. The app uses automatic signing; a personal team is sufficient for local testing.
-
-Create an ignored `iosApp/Local.xcconfig` containing your Mac's local hostname, signing team ID, and a unique bundle identifier:
+For a physical iPhone, connect and unlock it, enable Developer Mode, and sign in to Xcode. Create an ignored `iosApp/Local.xcconfig`:
 
 ```xcconfig
 FLIGHTS_API_HOST[sdk=iphoneos*] = YOUR_MAC.local
@@ -109,11 +57,9 @@ DEVELOPMENT_TEAM = YOUR_TEAM_ID
 FLIGHTS_BUNDLE_IDENTIFIER[sdk=iphoneos*] = com.yourname.flightexplorer
 ```
 
-`scutil --get LocalHostName` prints the Mac hostname; append `.local`. Start the API with `--host 0.0.0.0`, put both devices on the same Wi-Fi network, select your physical iPhone in Xcode, and run. Allow the app's Local Network prompt on the phone. If the first fetch precedes permission approval, tap Retry. The simulator continues to use localhost.
+Find the hostname with `scutil --get LocalHostName` and append `.local`. Start the API with `python3 server/server.py --host 0.0.0.0`, keep the phone and Mac on the same Wi-Fi, and run on the phone from Xcode. Approve the Local Network prompt and your developer profile if prompted; tap Retry if the first fetch failed before approval. Keep the Mac awake for refreshes. Personal-team installations expire and need rebuilding.
 
-Keep the Mac awake and the API running for fresh data. Once loaded, cached flights and saved snapshots work without the server. Apple personal-team installations expire and may require rebuilding; this is a development installation, not a TestFlight or App Store release.
-
-To build from the command line after Xcode setup:
+To check the simulator build from the terminal:
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
@@ -122,61 +68,18 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   CODE_SIGNING_ALLOWED=NO ARCHS=arm64 build
 ```
 
-Run shared tests on an Apple Silicon iOS simulator:
+## Test
 
-```sh
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
-  ./gradlew :shared:iosSimulatorArm64Test
-```
-
-## Tests
-
-API tests (no external service needed):
+These checks cover the API, shared rules/persistence on both platforms, and Android lint:
 
 ```sh
 python3 -m unittest discover -s server -t . -v
+./gradlew :shared:testAndroidHostTest :androidApp:lintDebug
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./gradlew :shared:iosSimulatorArm64Test
 ```
 
-Shared rules, network decoding/failures, SQLite reopen/rollback, and screen-state tests:
+Native tests use disposable devices because some reset app data. With a Google APIs emulator and the API running, run `./gradlew :androidApp:connectedDebugAndroidTest`. Offline tests skip while the API is running. For the complete Android online/offline/cold-start sequence, stop the API, build the app and tests with `./gradlew :androidApp:assembleDebug :androidApp:assembleDebugAndroidTest`, then run `python3 scripts/android_walkthrough.py`. This runner starts and stops its own API and leaves it stopped.
 
-```sh
-./gradlew :shared:testAndroidHostTest
-```
+For iOS, select a disposable simulator and run individual methods in the `FlightExplorerUITests` target using Xcode’s Test navigator. Run `testOnline` with the API running, stop the API, then run `testOfflineRelaunch` while preserving app data. For `testColdStartFailure`, keep the API stopped and uninstall the app first. Run the combined-filter and saved-detail regression tests with the API running. Run the destination-removal regression separately against `python3 scripts/selection_test_server.py` in place of the normal server, then stop that test server.
 
-Android screen tests require a running Google APIs emulator and the local API:
-
-```sh
-./gradlew :androidApp:connectedDebugAndroidTest
-```
-
-For an actual process-stop/offline restart check (optionally recorded), stop the API first:
-
-```sh
-./gradlew :androidApp:assembleDebug :androidApp:assembleDebugAndroidTest
-python3 scripts/android_walkthrough.py --record
-```
-
-This script owns a temporary API process, stops it between instrumentation runs, and saves logs/videos under `work/acceptance/`. It verifies online discovery and map loading, offline cached search and saved-flight removal, and cold-start Retry. It leaves the API stopped.
-
-Screen tests clear the app's database on the test emulator. Use a disposable emulator, not an installation with saved flights you want to retain.
-
-iOS native UI tests are in the `FlightExplorerUITests` target. Use a disposable iPhone simulator. Build the tests once with Xcode's **Test** action or:
-
-```sh
-xcodebuild -project iosApp/RoameStarter.xcodeproj -scheme RoameStarter \
-  -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR_UDID' \
-  -derivedDataPath work/DerivedData CODE_SIGNING_ALLOWED=NO ARCHS=arm64 build-for-testing
-```
-
-Use the same project, scheme, destination and derived-data arguments with `test-without-building`, `-parallel-testing-enabled NO`, and one of:
-
-- `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testOnline`: fresh app data, API running; leaves one saved flight.
-- `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testCombinedFilters`: API running; combines cabin, multiple programs, points, and a changed start date.
-- `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testRemovedSavedDetailStaysDismissed`: fresh app data, API running; removes a flight from its saved detail sheet, saves it again, and checks that the old detail stays dismissed.
-- `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testRemovedDestinationStaysDismissed`: run separately, replacing the normal API with `python3 scripts/selection_test_server.py`; removes the open destination during a delayed refresh, then restores it and checks that the sheet stays dismissed. Stop this test server afterward.
-- `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testOfflineRelaunch`: API stopped, preserve the previous app data; verifies cached search and removes that saved flight.
-- `-only-testing:FlightExplorerUITests/FlightExplorerUITests/testColdStartFailure`: API stopped, uninstall/reinstall the app first to clear this disposable installation's data.
-
-Set `DEVELOPER_DIR` as above when Xcode is not the active command-line installation. Offline tests skip while the API is running; execute the phases separately in the stated order.
-
-Test evidence and verification limits are in `docs/VALIDATION.md`. Architecture, assumptions, and AI use are in `docs/SUBMISSION.md`. The walkthrough sequence is in `docs/WALKTHROUGH.md`. Review findings and readability improvements are recorded in `docs/CODE_REVIEW.md`.
+For a manual check on each platform: load all flights, search an origin/destination, apply and reset filters, select a map marker and route, and save a flight. Stop the API, fully close and reopen the app, search cached results, and view/remove the saved flight. A clean installation with the API stopped should show Retry. Map tiles still need a network connection; offline support covers flight data.
